@@ -51,3 +51,6 @@ mysql-data/
 
 ### Docker compose ###
 docker-compose.yml
+
+### Docker ###
+docker-build.sh
