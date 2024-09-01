@@ -2,12 +2,13 @@ import http from 'k6/http';
 import {check} from 'k6';
 
 export let options = {
-    vus: 700,  // 가상 유저 수
-    duration: '30s',  // 테스트 지속 시간
+    vus: 10,  // 가상 유저 수
+    duration: '5s',  // 테스트 지속 시간
 };
 
 export default function () {
-    let url = 'http://3.36.124.139:8080/api/transfers/transfer';
+    // let url = 'http://3.36.124.139:8080/api/transfers/transfer';
+    let url = 'http://localhost:10000/api/transfers/transfer';
 
     let payload = JSON.stringify({
         senderId: 1,

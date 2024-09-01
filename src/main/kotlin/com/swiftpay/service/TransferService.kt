@@ -18,6 +18,21 @@ class TransferService(
 
     private val log: Logger = LoggerFactory.getLogger(TransferService::class.java)
 
+    private val BLOCK_ATTEMPT_COUNT = 5
+
+    /**
+     * 지정된 송신자 계좌에서 수신자 계좌로 금액을 이체하는 기능을 수행합니다.
+     * 이 과정에서 송신자 계좌의 비정상 접근 여부를 확인하고,
+     * 송신 및 수신 계좌의 상태를 검증한 후, 이체를 수행합니다.
+     * 이체 후에는 이체 내역이 기록됩니다.
+     *
+     * @param senderId 송신자 계좌의 ID
+     * @param recipientId 수신자 계좌의 ID
+     * @param sendAmount 이체할 금액
+     *
+     * @throws IllegalArgumentException 송신자 계좌의 잔액이 부족한 경우 발생
+     * @throws IllegalStateException 비정상 접근이 감지되어 송신자 계좌가 차단된 경우 발생
+     */
     @Transactional
     fun transferMoney(senderId: Long, recipientId: Long, sendAmount: BigDecimal) {
         log.info("Initiating transfer from account $senderId to account $recipientId for amount $sendAmount")
@@ -25,23 +40,35 @@ class TransferService(
         val senderAccount = accountService.findById(senderId)
         val recipientAccount = accountService.findById(recipientId)
 
-        validateAccount(senderAccount, recipientAccount)
+        checkForAbnormalRequests(senderAccount)
 
-        validateTransfer(senderAccount.balance, sendAmount)
+        validateAccounts(senderAccount, recipientAccount)
+        validateTransferAmount(senderAccount.balance, sendAmount)
 
         executeTransfer(senderAccount, recipientAccount, sendAmount)
-
         saveTransferHistory(senderId, recipientId, sendAmount)
 
         log.info("Transfer from account $senderId to account $recipientId completed successfully")
     }
 
-    private fun validateAccount(senderAccount: Account, recipientAccount: Account) {
+    private fun checkForAbnormalRequests(senderAccount: Account) {
+        senderAccount.id ?: throw IllegalArgumentException("Account not found")
+        RequestTracker.logRequest(senderAccount.id)
+        RequestTracker.clearOldRequests(senderAccount.id)
+
+
+        if (RequestTracker.getRequestTimes(senderAccount.id).size > BLOCK_ATTEMPT_COUNT) {
+            senderAccount.blockAccount()
+            throw IllegalStateException("Account ${senderAccount.id} has been blocked due to abnormal activity.")
+        }
+    }
+
+    private fun validateAccounts(senderAccount: Account, recipientAccount: Account) {
         senderAccount.canProcessTransferStatusCheck()
         recipientAccount.canProcessReceiveStatusCheck()
     }
 
-    private fun validateTransfer(senderBalance: BigDecimal, sendAmount: BigDecimal) {
+    private fun validateTransferAmount(senderBalance: BigDecimal, sendAmount: BigDecimal) {
         if (senderBalance < sendAmount) {
             throw IllegalArgumentException("Insufficient balance in sender's account. Current balance: $senderBalance, Requested amount: $sendAmount")
         }

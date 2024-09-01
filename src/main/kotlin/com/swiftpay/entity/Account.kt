@@ -42,4 +42,8 @@ data class Account(
             throw IllegalStateException("Account is locked and cannot process receive (account id: $id)")
         }
     }
+
+    fun blockAccount() {
+        isAccountLocked = true
+    }
 }
