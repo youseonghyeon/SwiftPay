@@ -18,4 +18,8 @@ class AccountService(private val accountRepository: AccountRepository) {
         return accountRepository.save(newAccount)
     }
 
+    fun findById(id: Long): Account {
+        return accountRepository.findById(id).orElseThrow { IllegalArgumentException("Account not found") }
+    }
+
 }

@@ -17,7 +17,7 @@ import kotlin.test.Test
 class AccountServiceTest {
 
     @Autowired
-    lateinit var accountService: AccountService
+    private lateinit var accountService: AccountService
 
     @Test
     @DisplayName("유저 생성 테스트")

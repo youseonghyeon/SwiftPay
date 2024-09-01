@@ -1,7 +1,9 @@
 package com.swiftpay.dto
 
+import java.math.BigDecimal
+
 data class TransferRequest (
     val senderId: Long,
-    val recipientId: String,
-    val amount: Double
+    val recipientId: Long,
+    val amount: BigDecimal
 )
