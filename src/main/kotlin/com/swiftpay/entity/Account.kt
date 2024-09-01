@@ -28,4 +28,18 @@ data class Account(
 
     @Column(name = "is_account_locked", nullable = false)
     var isAccountLocked: Boolean = false,
-)
+) {
+
+
+    fun canProcessTransferStatusCheck() {
+        if (isAccountLocked) {
+            throw IllegalStateException("Account is locked and cannot process transfer (account id: $id)")
+        }
+    }
+
+    fun canProcessReceiveStatusCheck() {
+        if (isAccountLocked) {
+            throw IllegalStateException("Account is locked and cannot process receive (account id: $id)")
+        }
+    }
+}

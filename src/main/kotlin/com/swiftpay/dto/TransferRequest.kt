@@ -6,4 +6,5 @@ data class TransferRequest (
     val senderId: Long,
     val recipientId: Long,
     val amount: BigDecimal
+
 )

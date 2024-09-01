@@ -1,10 +1,8 @@
 package com.swiftpay.service
 
-import com.swiftpay.entity.TransferHistory
-import com.swiftpay.entity.TransferStatus
-import com.swiftpay.repository.TransferHistoryRepository
 import jakarta.persistence.EntityManager
 import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
@@ -22,7 +20,7 @@ class TransferServiceTest {
     private lateinit var accountService: AccountService
 
     @Autowired
-    private lateinit var transferHistoryRepository: TransferHistoryRepository
+    private lateinit var transferService: TransferService
 
 
     @Autowired
@@ -40,7 +38,7 @@ class TransferServiceTest {
             }
         val sendAmount = BigDecimal(1000)
 
-        transferMoney(senderId, recipientId, sendAmount)
+        transferService.transferMoney(senderId, recipientId, sendAmount)
 
         em.flush()
         em.clear()
@@ -52,21 +50,38 @@ class TransferServiceTest {
         assertEquals(BigDecimal(11000).compareTo(recipientAccount.balance), 0)
     }
 
-    private fun transferMoney(senderId: Long, recipientId: Long, sendAmount: BigDecimal) {
-        val senderAccount = accountService.findById(senderId)
-        val recipientAccount = accountService.findById(recipientId)
-
-        if (senderAccount.balance < sendAmount) {
-            throw IllegalArgumentException("송신자 계좌에 잔액이 부족합니다. 현재 잔액: ${senderAccount.balance} 요청 금액: $sendAmount")
+    @Test
+    @DisplayName("잔액 부족 송금 테스트")
+    fun `transfer money insufficient balance`() {
+        val senderId: Long = requireNotNull(accountService.createAccount("sender", "Sender", BigDecimal(1000)).id) {
+            "Sender account not created"
         }
+        val recipientId: Long =
+            requireNotNull(accountService.createAccount("recipient", "Recipient", BigDecimal(10000)).id) {
+                "Recipient Account not created"
+            }
+        val sendAmount = BigDecimal(10000)
 
-        // 송금 처리
-        senderAccount.balance = senderAccount.balance - sendAmount
-        recipientAccount.balance = recipientAccount.balance + sendAmount
-        val transferHistory = TransferHistory(
-            senderId = senderId, recipientId = recipientId, amount = sendAmount, status = TransferStatus.SUCCESS
-        )
-        transferHistoryRepository.save(transferHistory)
+        val exception = assertThrows<IllegalArgumentException> {
+            transferService.transferMoney(senderId, recipientId, sendAmount)
+        }
+        assertEquals("Insufficient balance in sender's account. Current balance: 1000, Requested amount: 10000", exception.message)
     }
+
+    @Test
+    @DisplayName("계좌 없는 송금 테스트")
+    fun `transfer money account not found`() {
+        val senderId: Long = requireNotNull(accountService.createAccount("sender", "Sender", BigDecimal(1000)).id) {
+            "Sender account not created"
+        }
+        val recipientId: Long = 1000
+        val sendAmount = BigDecimal(1000)
+
+        val exception = assertThrows<IllegalArgumentException> {
+            transferService.transferMoney(senderId, recipientId, sendAmount)
+        }
+        assertEquals("Account not found", exception.message)
+    }
+
 
 }
