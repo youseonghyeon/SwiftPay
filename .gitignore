@@ -45,3 +45,9 @@ out/
 ### Properties ###
 **/application*.properties
 **/application*.yml
+
+### Mysql Data Sector ###
+mysql-data/
+
+### Docker compose ###
+docker-compose.yml
