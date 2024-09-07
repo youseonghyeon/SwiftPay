@@ -6,7 +6,7 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "transfer_history")
-data class TransferHistory(
+class TransferHistory(
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

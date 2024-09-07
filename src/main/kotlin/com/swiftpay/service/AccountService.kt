@@ -14,7 +14,14 @@ class AccountService(private val accountRepository: AccountRepository) {
                 throw IllegalArgumentException("Account with username $username already exists")
             }
         }
-        val newAccount = Account(username = username, name = name, balance = balance, isAccountLocked = false)
+        val newAccount = Account(
+            username = username,
+            name = name,
+            balance = balance,
+            isAccountLocked = false,
+            transactionLimit = BigDecimal(10000),
+            dailyLimit = BigDecimal(50000)
+        )
         return accountRepository.save(newAccount)
     }
 

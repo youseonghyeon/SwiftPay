@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.time.LocalDate
 
 @Service
 class TransferService(
@@ -42,7 +43,14 @@ class TransferService(
 
         checkForAbnormalRequests(senderAccount)
 
-        validateAccounts(senderAccount, recipientAccount)
+        val dailyTransferAmount =
+            transferHistoryRepository.findSumAmountBySenderIdAndTransferDateBetween(
+                senderAccount.id!!,
+                LocalDate.now().atStartOfDay(),
+                LocalDate.now().atTime(23, 59, 59)
+            ) ?: BigDecimal.ZERO
+
+        validateAccounts(senderAccount, recipientAccount, sendAmount, dailyTransferAmount)
         validateTransferAmount(senderAccount.balance, sendAmount)
 
         executeTransfer(senderAccount, recipientAccount, sendAmount)
@@ -63,9 +71,15 @@ class TransferService(
         }
     }
 
-    private fun validateAccounts(senderAccount: Account, recipientAccount: Account) {
-        senderAccount.canProcessTransferStatusCheck()
-        recipientAccount.canProcessReceiveStatusCheck()
+    private fun validateAccounts(
+        senderAccount: Account,
+        recipientAccount: Account,
+        sendAmount: BigDecimal,
+        dailyTransferAmount: BigDecimal
+    ) {
+
+        senderAccount.validateTransferOrThrow(sendAmount, dailyTransferAmount)
+        recipientAccount.validateReceiveStatus()
     }
 
     private fun validateTransferAmount(senderBalance: BigDecimal, sendAmount: BigDecimal) {
