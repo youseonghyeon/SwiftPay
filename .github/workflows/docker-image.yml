@@ -28,3 +28,15 @@ jobs:
       # 4. Docker 이미지 푸시
       - name: Push Docker Image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/pay:latest
+        
+      # 5. SSH로 원격 서버에 접속하여 docker-compose 실행
+      - name: Deploy to Remote Server via SSH
+        uses: appleboy/ssh-action@v0.1.6
+        with:
+          host: ${{ secrets.SSH_HOST }}       # 원격 서버의 IP
+          username: ${{ secrets.SSH_USER }}   # 원격 서버 사용자 이름
+          key: ${{ secrets.SSH_PRIVATE_KEY }} # GitHub Secrets에 저장된 SSH 개인 키
+          script: |
+            cd /app                          # docker-compose.yml이 있는 디렉토리로 이동
+            docker-compose pull app          # 새로운 이미지를 가져옴
+            docker-compose up -d             # 컨테이너를 재시작
