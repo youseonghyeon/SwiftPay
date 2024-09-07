@@ -54,6 +54,7 @@ open class TransferService(
 
         if (RequestTracker.getRequestTimes(senderAccount.id!!).size > blockAttemptCount) {
             senderAccount.blockAccount()
+            accountService.save(senderAccount)
             throw IllegalStateException("Account ${senderAccount.id} has been blocked due to abnormal activity. (Max request count exceeded)")
         }
     }
@@ -62,6 +63,7 @@ open class TransferService(
         val sendAmountInPeriod = ttlMap.get(senderAccount.id!!)
         if (sendAmountInPeriod + sendAmount > maxPeriodAmount) {
             senderAccount.blockAccount()
+            accountService.save(senderAccount)
             throw IllegalStateException("Account ${senderAccount.id} has been blocked due to abnormal activity. (Max transfer amount exceeded)")
         }
         ttlMap.add(senderAccount.id, sendAmount)

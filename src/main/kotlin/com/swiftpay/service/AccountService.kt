@@ -35,4 +35,8 @@ class AccountService(private val accountRepository: AccountRepository) {
         return accountRepository.findById(id).orElseThrow { IllegalArgumentException("Account not found") }
     }
 
+    fun save(senderAccount: Account) {
+        accountRepository.save(senderAccount)
+    }
+
 }
