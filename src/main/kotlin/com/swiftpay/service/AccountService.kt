@@ -8,7 +8,13 @@ import java.math.BigDecimal
 @Service
 class AccountService(private val accountRepository: AccountRepository) {
 
-    fun createAccount(username: String, name: String, balance: BigDecimal): Account {
+    fun createAccount(
+        username: String,
+        name: String,
+        balance: BigDecimal,
+        transactionLimit: BigDecimal = BigDecimal(10000),
+        dailyLimit: BigDecimal = BigDecimal(50000)
+    ): Account {
         accountRepository.existsByUsername(username).let {
             if (it) {
                 throw IllegalArgumentException("Account with username $username already exists")
@@ -19,8 +25,8 @@ class AccountService(private val accountRepository: AccountRepository) {
             name = name,
             balance = balance,
             isAccountLocked = false,
-            transactionLimit = BigDecimal(10000),
-            dailyLimit = BigDecimal(50000)
+            transactionLimit = transactionLimit,
+            dailyLimit = dailyLimit
         )
         return accountRepository.save(newAccount)
     }

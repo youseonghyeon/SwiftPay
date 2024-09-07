@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @Transactional
 @SpringBootTest
@@ -65,7 +66,10 @@ class TransferServiceTest {
         val exception = assertThrows<IllegalArgumentException> {
             transferService.transferMoney(senderId, recipientId, sendAmount)
         }
-        assertEquals("Insufficient balance in sender's account. Current balance: 1000, Requested amount: 10000", exception.message)
+        assertEquals(
+            "Insufficient balance in sender's account. Current balance: 1000, Requested amount: 10000",
+            exception.message
+        )
     }
 
     @Test
@@ -81,6 +85,74 @@ class TransferServiceTest {
             transferService.transferMoney(senderId, recipientId, sendAmount)
         }
         assertEquals("Account not found", exception.message)
+    }
+
+    @Test
+    @DisplayName("빈번한 송금 테스트 - 시간단위 송금 횟수 초과")
+    fun `transfer money frequent transfers`() {
+        val senderId: Long = requireNotNull(accountService.createAccount("sender", "Sender", BigDecimal(10000)).id) {
+            "Sender account not created"
+        }
+        val recipientId: Long =
+            requireNotNull(accountService.createAccount("recipient", "Recipient", BigDecimal(10000)).id) {
+                "Recipient Account not created"
+            }
+        val sendAmount = BigDecimal(1000)
+
+        repeat(10) {
+            transferService.transferMoney(senderId, recipientId, sendAmount)
+        }
+
+        val exception = assertThrows<IllegalStateException> {
+            transferService.transferMoney(senderId, recipientId, sendAmount)
+        }
+        assertEquals(
+            "Account $senderId has been blocked due to abnormal activity. (Max request count exceeded)",
+            exception.message
+        )
+
+        assertTrue { accountService.findById(senderId).isAccountLocked }
+    }
+
+    @Test
+    @DisplayName("빈번한 송금 테스트 - 시간단위 송금 금액 초과")
+    fun `transfer money frequent transfers - exceeds max transfer amount`() {
+        val senderId: Long = requireNotNull(
+            accountService.createAccount(
+                username = "sender",
+                name = "Sender",
+                balance = BigDecimal(9999999999),
+                transactionLimit = BigDecimal(9999999999),
+                dailyLimit = BigDecimal(9999999999)
+            ).id
+        ) {
+            "Sender account not created"
+        }
+        val recipientId: Long =
+            requireNotNull(
+                accountService.createAccount(
+                    "recipient",
+                    "Recipient",
+                    balance = BigDecimal(9999999999)
+                ).id
+            ) {
+                "Recipient Account not created"
+            }
+        val sendAmount = BigDecimal(20000)
+
+        repeat(5) {
+            transferService.transferMoney(senderId, recipientId, sendAmount)
+        }
+
+        val exception = assertThrows<IllegalStateException> {
+            transferService.transferMoney(senderId, recipientId, sendAmount)
+        }
+        assertEquals(
+            "Account $senderId has been blocked due to abnormal activity. (Max transfer amount exceeded)",
+            exception.message
+        )
+
+        assertTrue { accountService.findById(senderId).isAccountLocked }
     }
 
 

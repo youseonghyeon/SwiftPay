@@ -1,4 +1,4 @@
-package com.swiftpay.service
+package com.swiftpay.util
 
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -28,9 +28,9 @@ class TtlMap(private val ttl: Long, private val unit: TimeUnit) {
     }
 
     // 해당 키의 합계 값을 가져옴 (만료되지 않은 데이터만)
-    fun get(key: Long): BigDecimal? {
+    fun get(key: Long): BigDecimal {
         removeExpiredEntries(key)
-        val values = map[key] ?: return null
+        val values = map[key] ?: return BigDecimal.ZERO
         return values.map { it.second }.fold(BigDecimal.ZERO, BigDecimal::add)
     }
 

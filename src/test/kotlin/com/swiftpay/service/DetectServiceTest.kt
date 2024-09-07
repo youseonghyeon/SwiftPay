@@ -1,15 +1,23 @@
 package com.swiftpay.service
 
 import com.swiftpay.entity.Account
+import com.swiftpay.util.TtlMap
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 
+@Transactional
+@SpringBootTest
+@ActiveProfiles("test")
 class DetectServiceTest {
+
 
     private fun createTestAccount(
         balance: BigDecimal,

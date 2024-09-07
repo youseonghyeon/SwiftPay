@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 
 object RequestTracker {
+
     private val requestMap = ConcurrentHashMap<Long, MutableList<Long>>()
 
     fun logRequest(accountId: Long) {
