@@ -34,13 +34,13 @@ class Account(
 
     fun validateTransferOrThrow(amount: BigDecimal, dailyTransferAmount: BigDecimal) {
         if (isAccountLocked) {
-            throw IllegalStateException("Account is locked and cannot process transfer (account id: $id, amount: $amount, balance: $balance)")
+            throw IllegalStateException("Account is locked")
         }
         if (amount > transactionLimit) {
-            throw IllegalStateException("Transfer amount exceeds the transaction limit (account id: $id, amount: $amount, transactionLimit: $transactionLimit)")
+            throw IllegalStateException("Transfer amount exceeds the transaction limit")
         }
         if (dailyTransferAmount + amount > dailyLimit) {
-            throw IllegalStateException("Transfer amount exceeds the daily limit (account id: $id, amount: $amount, dailyTransferAmount: $dailyTransferAmount, dailyLimit: $dailyLimit)")
+            throw IllegalStateException("Transfer amount exceeds the daily limit")
         }
     }
 

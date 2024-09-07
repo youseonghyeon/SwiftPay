@@ -150,3 +150,53 @@
 - 이상 거래 감지 및 차단 기능 성능 개선
   - 송금 검증 및 이상거래 기능 중 현재 송금에 영향을 미치지 않는다면, 복잡한 로직을 비 동기적으로 처리하여 성능을 개선할 예정입니다.
   - 멀티쓰레딩 혹은 kafka 사용 예정
+
+# 트러블 슈팅
+**2024년 9월 7일**
+## `@Transactional` 유지로 인한 repository.save() 호출 후 롤백 문제
+
+### 문제 설명
+`@Transactional`로 정의된 `save` 메서드에서 엔티티를 저장한 후 예외를 발생시킬 때, 저장된 데이터가 커밋되지 않는 문제가 발생했습니다. 이는 예외가 트랜잭션 내부에서 발생하기 때문에 트랜잭션이 롤백되고, 데이터베이스에 저장된 내용이 유지되지 않았습니다.
+
+### 문제 원인
+기본적으로, `@Transactional` 어노테이션은 **런타임 예외**나 **체크되지 않은 예외(Unchecked Exception)**가 발생하면 **자동으로 롤백**을 수행합니다. 즉, `save` 메서드에서 엔티티를 저장한 후 예외가 발생하면 트랜잭션이 롤백되며, 저장된 데이터가 커밋되지 않습니다.
+
+### 해결 방법
+강제로 중간 커밋을 하기 위해 `@Transactional(propagation = Propagation.REQUIRES_NEW)`를 사용하여 **새로운 트랜잭션**에서 데이터를 저장하고, 저장 후 바로 **강제 커밋**되도록 하였습니다. 이를 통해 예외가 발생하더라도 트랜잭션 내에서 커밋이 정상적으로 이루어집니다.
+
+### 해결 코드 예시
+
+### 수정 전 (에러로 인한 롤백 발생)
+```kotlin
+    @Transactional
+    open fun transferMoney(senderId: Long, recipientId: Long, sendAmount: BigDecimal) {
+        ...
+         if (RequestTracker.getRequestTimes(senderAccount.id!!).size > blockAttemptCount) {
+            ...
+            accountService.save(senderAccount)
+            throw IllegalStateException("Account ${senderAccount.id} has been blocked due to abnormal activity. (Max request count exceeded)")
+        }
+    }
+
+    fun save(senderAccount: Account) {
+        accountRepository.save(senderAccount)
+    }
+```
+### 수정 후 (정상 커밋)
+```kotlin
+    @Transactional
+    open fun transferMoney(senderId: Long, recipientId: Long, sendAmount: BigDecimal) {
+        ...
+        if (RequestTracker.getRequestTimes(senderAccount.id!!).size > blockAttemptCount) {
+            ...
+            // 강제 커밋이므로 주의 필요
+            accountService.saveAccountWithNewTransaction(senderAccount)
+        throw IllegalStateException("Account ${senderAccount.id} has been blocked due to abnormal activity. (Max request count exceeded)")
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    fun saveAccountWithNewTransaction(senderAccount: Account) { 
+        accountRepository.save(senderAccount)
+    }
+```

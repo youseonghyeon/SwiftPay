@@ -16,7 +16,7 @@ export default function () {
     let sendPayload = JSON.stringify({
         senderId: 1,
         recipientId: 2,
-        amount: 40000,
+        amount: 100,
     });
 
     let userCreatePayload = JSON.stringify({

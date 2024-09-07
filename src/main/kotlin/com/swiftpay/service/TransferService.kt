@@ -31,13 +31,13 @@ open class TransferService(
         val senderAccount = accountService.findById(senderId)
         val recipientAccount = accountService.findById(recipientId)
 
-        // 비정상 요청 체크 및 송금 제한 확인
-        checkForAbnormalRequests(senderAccount) // 요청 횟수 체크
-        validateFrequentTransfers(senderAccount, sendAmount) // 송금 금액 체크
-
         // 송금 한도 및 계좌 상태 확인
         val dailyTransferAmount = calculateDailyTransferAmount(senderAccount)
         validateAccounts(senderAccount, recipientAccount, sendAmount, dailyTransferAmount)
+
+        // 비정상 요청 체크 및 송금 제한 확인
+        checkForAbnormalRequests(senderAccount) // 요청 횟수 체크 ## account 강제 커밋 존재
+        validateFrequentTransfers(senderAccount, sendAmount) // 송금 금액 체크 ## account 강제 커밋 존재
 
         // 송금 실행
         executeTransfer(senderAccount, recipientAccount, sendAmount)
@@ -54,7 +54,7 @@ open class TransferService(
 
         if (RequestTracker.getRequestTimes(senderAccount.id!!).size > blockAttemptCount) {
             senderAccount.blockAccount()
-            accountService.save(senderAccount)
+            accountService.saveAccountWithNewTransaction(senderAccount)
             throw IllegalStateException("Account ${senderAccount.id} has been blocked due to abnormal activity. (Max request count exceeded)")
         }
     }
@@ -63,7 +63,7 @@ open class TransferService(
         val sendAmountInPeriod = ttlMap.get(senderAccount.id!!)
         if (sendAmountInPeriod + sendAmount > maxPeriodAmount) {
             senderAccount.blockAccount()
-            accountService.save(senderAccount)
+            accountService.saveAccountWithNewTransaction(senderAccount)
             throw IllegalStateException("Account ${senderAccount.id} has been blocked due to abnormal activity. (Max transfer amount exceeded)")
         }
         ttlMap.add(senderAccount.id, sendAmount)

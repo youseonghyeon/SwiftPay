@@ -3,6 +3,8 @@ package com.swiftpay.service
 import com.swiftpay.entity.Account
 import com.swiftpay.repository.AccountRepository
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 
 @Service
@@ -35,7 +37,8 @@ class AccountService(private val accountRepository: AccountRepository) {
         return accountRepository.findById(id).orElseThrow { IllegalArgumentException("Account not found") }
     }
 
-    fun save(senderAccount: Account) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    fun saveAccountWithNewTransaction(senderAccount: Account) {
         accountRepository.save(senderAccount)
     }
 
