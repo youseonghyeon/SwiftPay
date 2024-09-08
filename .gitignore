@@ -53,3 +53,5 @@ docker-compose.yml
 
 ### Docker ###
 docker-build.sh
+
+*.log

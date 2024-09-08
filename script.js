@@ -14,8 +14,8 @@ export default function () {
     var index = Math.floor(Math.random() * 1000);  // 고유한 인덱스 값 생성
 
     let sendPayload = JSON.stringify({
-        senderId: 1,
-        recipientId: 2,
+        senderId: index,
+        recipientId: index,
         amount: 100,
     });
 

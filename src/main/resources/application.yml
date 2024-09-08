@@ -7,11 +7,10 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
-
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
 
 management:
   server:
@@ -37,3 +36,4 @@ transfer:
 logging:
   level:
     com.swiftpay.aop: debug
+
