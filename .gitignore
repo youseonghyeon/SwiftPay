@@ -43,8 +43,7 @@ out/
 *.pem
 
 ### Properties ###
-**/application*.properties
-**/application*.yml
+#**/application*.properties
 
 ### Mysql Data Sector ###
 mysql-data/

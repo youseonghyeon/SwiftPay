@@ -27,11 +27,15 @@ jobs:
       # 3. Docker 이미지 빌드
       - name: Build Docker Image
         run: docker build --platform linux/amd64 -t ${{ secrets.DOCKER_USERNAME }}/pay:latest .
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
       # 4. Docker 이미지 푸시
       - name: Push Docker Image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/pay:latest
-        
+
       # 5. SSH로 원격 서버에 접속하여 docker-compose 실행
       - name: Deploy to Remote Server via SSH
         uses: appleboy/ssh-action@v0.1.6

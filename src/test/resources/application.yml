@@ -1,0 +1,19 @@
+server:
+  port: 10001
+
+spring:
+  datasource:
+    hikari:
+      jdbc-url: jdbc:p6spy:h2:mem:testdb;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: com.p6spy.engine.spy.P6SpyDriver
+    username: sa
+    password:
+
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+transfer:
+  block-attempt-count: 10
+  max-period-amount: 100000
