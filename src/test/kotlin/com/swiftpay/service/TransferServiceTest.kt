@@ -1,6 +1,8 @@
 package com.swiftpay.service
 
+import com.swiftpay.repository.PendingTransferRepository
 import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
@@ -8,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -23,8 +26,11 @@ class TransferServiceTest {
     @Autowired
     private lateinit var transferService: TransferService
 
-
     @Autowired
+    private lateinit var pendingTransferRepository: PendingTransferRepository
+
+
+    @PersistenceContext
     private lateinit var em: EntityManager
 
     @Test
@@ -63,11 +69,11 @@ class TransferServiceTest {
             }
         val sendAmount = BigDecimal(10000)
 
-        val exception = assertThrows<IllegalArgumentException> {
+        val exception = assertThrows<IllegalStateException> {
             transferService.transferMoney(senderId, recipientId, sendAmount)
         }
         assertEquals(
-            "Insufficient balance in sender's account. Current balance: 1000, Requested amount: 10000",
+            "Insufficient balance",
             exception.message
         )
     }
@@ -90,7 +96,7 @@ class TransferServiceTest {
     @Test
     @DisplayName("빈번한 송금 테스트 - 시간단위 송금 횟수 초과")
     fun `transfer money frequent transfers`() {
-        val senderId: Long = requireNotNull(accountService.createAccount("sender", "Sender", BigDecimal(10000)).id) {
+        val senderId: Long = requireNotNull(accountService.createAccount("sender", "Sender", BigDecimal(100000)).id) {
             "Sender account not created"
         }
         val recipientId: Long =
@@ -155,5 +161,33 @@ class TransferServiceTest {
         assertTrue { accountService.findById(senderId).isAccountLocked }
     }
 
+    @Test
+    @DisplayName("예약 송금 테스트")
+    fun `schedule transfer`() {
+        val senderId: Long = requireNotNull(accountService.createAccount("sender", "Sender", BigDecimal(10000)).id) {
+            "Sender account not created"
+        }
+        val recipientId: Long =
+            requireNotNull(accountService.createAccount("recipient", "Recipient", BigDecimal(10000)).id) {
+                "Recipient Account not created"
+            }
+        val sendAmount = BigDecimal(1000)
 
+        transferService.scheduleTransfer(
+            senderId,
+            recipientId,
+            sendAmount.toDouble(),
+            LocalDateTime.now().plusMinutes(5)
+        )
+
+        em.flush()
+        em.clear()
+
+        val findAll = pendingTransferRepository.findAll()
+        assertEquals(1, findAll.size)
+        assertEquals(senderId, findAll[0].senderId)
+        assertEquals(recipientId, findAll[0].recipientId)
+        assertEquals(0, findAll[0].amount.compareTo(sendAmount))
+
+    }
 }

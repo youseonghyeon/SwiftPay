@@ -1,25 +1,27 @@
 package com.swiftpay.service
 
-import com.swiftpay.entity.Account
-import com.swiftpay.entity.TransferHistory
-import com.swiftpay.entity.TransferStatus
-import com.swiftpay.repository.TransferHistoryRepository
+import com.swiftpay.entity.*
+import com.swiftpay.repository.ImmediateTransferResultRepository
+import com.swiftpay.repository.PendingTransferRepository
+import com.swiftpay.repository.ScheduledTransferResultRepository
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.time.LocalDateTime
+import java.util.UUID
 
 @Service
 open class TransferService(
     private val accountService: AccountService,
-    private val transferHistoryRepository: TransferHistoryRepository,
-    private val transferValidator: TransferValidator
+    private val immediateTransferResultRepository: ImmediateTransferResultRepository,
+    private val transferValidator: TransferValidator,
+    private val pendingTransferRepository: PendingTransferRepository,
+    private val scheduledTransferResultRepository: ScheduledTransferResultRepository
 ) {
 
     private val log: Logger = LoggerFactory.getLogger(TransferService::class.java)
-
-
 
 
     @Transactional
@@ -53,13 +55,58 @@ open class TransferService(
     }
 
     private fun saveTransferHistory(senderId: Long, recipientId: Long, amount: BigDecimal) {
-        val transferHistory = TransferHistory(
+        val immediateTransferResult = ImmediateTransferResult(
             senderId = senderId,
             recipientId = recipientId,
             amount = amount,
             status = TransferStatus.SUCCESS
         )
-        transferHistoryRepository.save(transferHistory)
+        immediateTransferResultRepository.save(immediateTransferResult)
         log.info("Transfer history for transfer from account $senderId to account $recipientId saved successfully")
+    }
+
+    @Transactional
+    fun scheduleTransfer(senderId: Long, recipientId: Long, amount: Double, scheduleTime: LocalDateTime) {
+        log.info("Starting to schedule transfer. Sender: $senderId, Recipient: $recipientId, Amount: $amount, Schedule Time: $scheduleTime")
+
+        val transferDetails = createTransferDetails(senderId, recipientId, amount, scheduleTime)
+
+        // 송금 대기 테이블 저장
+        pendingTransferRepository.save(transferDetails.first)
+        log.info("Pending transfer saved. Transfer ID: ${transferDetails.first.id}, Status: ${transferDetails.first.status}")
+
+        // 송금 결과 테이블 저장
+        scheduledTransferResultRepository.save(transferDetails.second)
+        log.info("Scheduled transfer result saved. Transfer ID: ${transferDetails.second.id}, Status: ${transferDetails.second.status}")
+
+        log.info("Transfer scheduling completed successfully.")
+    }
+
+    private fun createTransferDetails(
+        senderId: Long,
+        recipientId: Long,
+        amount: Double,
+        scheduleTime: LocalDateTime
+    ): Pair<PendingTransfer, ScheduledTransferResult> {
+        val amountBigDecimal = BigDecimal.valueOf(amount)
+        val randomTransactionId = UUID.randomUUID().toString()
+        val pendingTransfer = PendingTransfer(
+            senderId = senderId,
+            recipientId = recipientId,
+            amount = amountBigDecimal,
+            schedule_time = scheduleTime,
+            status = TransferStatus.PENDING,
+            transactionId = randomTransactionId
+        )
+        val scheduledTransferResult = ScheduledTransferResult(
+            senderId = senderId,
+            recipientId = recipientId,
+            amount = amountBigDecimal,
+            scheduleTime = scheduleTime,
+            status = TransferStatus.PENDING,
+            transactionId = randomTransactionId
+        )
+
+        return Pair(pendingTransfer, scheduledTransferResult)
     }
 }

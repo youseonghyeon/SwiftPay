@@ -36,6 +36,9 @@ class Account(
         if (isAccountLocked) {
             throw IllegalStateException("Account is locked")
         }
+        if (amount > balance) {
+            throw IllegalStateException("Insufficient balance")
+        }
         if (amount > transactionLimit) {
             throw IllegalStateException("Transfer amount exceeds the transaction limit")
         }

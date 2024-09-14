@@ -35,7 +35,7 @@ class TransferController(private val transferService: TransferService) {
     @PostMapping("/schedule-transfer")
     fun scheduleTransfer(@RequestBody request: ScheduleTransferRequest) {
         log.info("Processing scheduled transfer request: $request")
-        throw NotImplementedError("Scheduled transfers are not yet supported")
+        transferService.scheduleTransfer(request.senderId, request.recipientId, request.amount, request.scheduleTime)
     }
 
 }

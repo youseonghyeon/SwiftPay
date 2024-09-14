@@ -1,7 +1,7 @@
 package com.swiftpay.service
 
 import com.swiftpay.entity.Account
-import com.swiftpay.repository.TransferHistoryRepository
+import com.swiftpay.repository.ImmediateTransferResultRepository
 import com.swiftpay.util.TtlMap
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
 @Component
 class TransferValidator(
     private val accountService: AccountService,
-    private val transferHistoryRepository: TransferHistoryRepository
+    private val immediateTransferResultRepository: ImmediateTransferResultRepository
 ) {
 
     @Value("\${transfer.block-attempt-count:10}") // 기본값 10
@@ -50,8 +50,8 @@ class TransferValidator(
     }
 
     fun calculateDailyTransferAmount(senderAccount: Account): BigDecimal {
-        log.info("transferHistoryRepository $transferHistoryRepository")
-        return transferHistoryRepository.findSumAmountBySenderIdAndTransferDateBetween(
+        log.info("transferHistoryRepository $immediateTransferResultRepository")
+        return immediateTransferResultRepository.findSumAmountBySenderIdAndTransferDateBetween(
             senderAccount.id!!,
             LocalDate.now().atStartOfDay(),
             LocalDate.now().atTime(23, 59, 59)

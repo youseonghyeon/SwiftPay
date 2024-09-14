@@ -76,7 +76,7 @@ class DetectServiceTest {
         }
         //then
         assertEquals(
-            "Transfer amount exceeds the transaction limit (account id: 1, amount: 3000, transactionLimit: 2000)",
+            "Transfer amount exceeds the transaction limit",
             exception.message
         )
     }
@@ -98,7 +98,7 @@ class DetectServiceTest {
         }
         //then
         assertEquals(
-            "Transfer amount exceeds the daily limit (account id: 1, amount: 2000, dailyTransferAmount: 4000, dailyLimit: 5000)",
+            "Transfer amount exceeds the daily limit",
             exception2.message
         )
     }
