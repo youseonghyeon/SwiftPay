@@ -2,6 +2,7 @@ package com.swiftpay.api
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.swiftpay.dto.TransferRequest
+import com.swiftpay.service.ScheduledTransferService
 import com.swiftpay.service.TransferService
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
@@ -22,6 +23,9 @@ class TransferControllerTest {
 
     @MockBean
     private lateinit var transferService: TransferService
+
+    @MockBean
+    private lateinit var scheduledTransferService: ScheduledTransferService
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper

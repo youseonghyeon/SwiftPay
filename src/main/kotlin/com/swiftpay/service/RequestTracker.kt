@@ -10,7 +10,7 @@ object RequestTracker {
 
     fun logRequest(accountId: Long) {
         val currentTime = System.currentTimeMillis()
-        requestMap.computeIfAbsent(accountId) { k: Long? -> Collections.synchronizedList(ArrayList()) }.add(currentTime)
+        requestMap.computeIfAbsent(accountId) { _: Long? -> Collections.synchronizedList(ArrayList()) }.add(currentTime)
     }
 
     fun getRequestTimes(accountId: Long?): List<Long> {

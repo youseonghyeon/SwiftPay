@@ -30,9 +30,9 @@ class TransferValidator(
 
     fun checkForAbnormalRequests(senderAccount: Account) {
         RequestTracker.logRequest(senderAccount.id!!)
-        RequestTracker.clearOldRequests(senderAccount.id!!)
+        RequestTracker.clearOldRequests(senderAccount.id)
 
-        if (RequestTracker.getRequestTimes(senderAccount.id!!).size > blockAttemptCount) {
+        if (RequestTracker.getRequestTimes(senderAccount.id).size > blockAttemptCount) {
             senderAccount.blockAccount()
             accountService.saveAccountWithNewTransaction(senderAccount)
             throw IllegalStateException("Account ${senderAccount.id} has been blocked due to abnormal activity. (Max request count exceeded)")

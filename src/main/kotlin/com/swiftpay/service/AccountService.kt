@@ -15,7 +15,8 @@ class AccountService(private val accountRepository: AccountRepository) {
         name: String,
         balance: BigDecimal,
         transactionLimit: BigDecimal = BigDecimal(10000),
-        dailyLimit: BigDecimal = BigDecimal(50000)
+        dailyLimit: BigDecimal = BigDecimal(50000),
+        isAccountLocked : Boolean = false
     ): Account {
         accountRepository.existsByUsername(username).let {
             if (it) {
@@ -26,7 +27,7 @@ class AccountService(private val accountRepository: AccountRepository) {
             username = username,
             name = name,
             balance = balance,
-            isAccountLocked = false,
+            isAccountLocked = isAccountLocked,
             transactionLimit = transactionLimit,
             dailyLimit = dailyLimit
         )

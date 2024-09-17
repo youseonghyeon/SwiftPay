@@ -4,7 +4,7 @@ server:
 spring:
   datasource:
     hikari:
-      jdbc-url: jdbc:p6spy:h2:mem:testdb;DB_CLOSE_ON_EXIT=FALSE
+      jdbc-url: jdbc:p6spy:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: com.p6spy.engine.spy.P6SpyDriver
     username: sa
     password:

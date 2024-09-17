@@ -16,7 +16,10 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/transfers")
-class TransferController(private val transferService: TransferService, private val scheduledTransferService: ScheduledTransferService) {
+class TransferController(
+    private val transferService: TransferService,
+    private val scheduledTransferService: ScheduledTransferService
+) {
 
     private val log: Logger = LoggerFactory.getLogger(javaClass)
 
@@ -36,7 +39,12 @@ class TransferController(private val transferService: TransferService, private v
     @PostMapping("/schedule-transfer")
     fun scheduleTransfer(@RequestBody request: ScheduleTransferRequest): ResponseEntity<ApiResponse<Unit>> {
         log.info("Processing scheduled transfer request: $request")
-        scheduledTransferService.scheduleTransferEnroll(request.senderId, request.recipientId, request.amount, request.scheduleTime)
+        scheduledTransferService.scheduleTransferEnroll(
+            request.senderId,
+            request.recipientId,
+            request.amount,
+            request.scheduleTime
+        )
 
         val apiResponse = ApiResponse<Unit>(
             status = HttpStatus.OK.value(),

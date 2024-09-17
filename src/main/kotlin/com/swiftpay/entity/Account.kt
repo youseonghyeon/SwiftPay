@@ -49,7 +49,7 @@ class Account(
 
     fun validateReceiveStatus() {
         if (isAccountLocked) {
-            throw IllegalStateException("Account is locked and cannot process receive (account id: $id)")
+            throw IllegalStateException("Account(receiver) is locked")
         }
     }
 

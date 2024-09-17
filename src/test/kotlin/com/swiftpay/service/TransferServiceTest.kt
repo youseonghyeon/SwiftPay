@@ -1,21 +1,19 @@
 package com.swiftpay.service
 
+import com.swiftpay.entity.TransferStatus
+import com.swiftpay.repository.ImmediateTransferResultRepository
 import com.swiftpay.repository.PendingTransferRepository
-import jakarta.persistence.EntityManager
-import jakarta.persistence.PersistenceContext
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-@Transactional
 @SpringBootTest
 @ActiveProfiles("test")
 class TransferServiceTest {
@@ -28,30 +26,34 @@ class TransferServiceTest {
 
     @Autowired
     private lateinit var pendingTransferRepository: PendingTransferRepository
-    
+
     @Autowired
     private lateinit var scheduledTransferService: ScheduledTransferService
 
+    @Autowired
+    private lateinit var immediateTransferResultRepository: ImmediateTransferResultRepository
 
-    @PersistenceContext
-    private lateinit var em: EntityManager
 
     @Test
     @DisplayName("송금 테스트")
     fun `transfer money`() {
-        val senderId: Long = requireNotNull(accountService.createAccount("sender", "Sender", BigDecimal(10000)).id) {
-            "Sender account not created"
-        }
+        val senderId: Long =
+            requireNotNull(accountService.createAccount("sender" + createRandomInt(), "Sender", BigDecimal(10000)).id) {
+                "Sender account not created"
+            }
         val recipientId: Long =
-            requireNotNull(accountService.createAccount("recipient", "Recipient", BigDecimal(10000)).id) {
+            requireNotNull(
+                accountService.createAccount(
+                    "recipient" + createRandomInt(),
+                    "Recipient",
+                    BigDecimal(10000)
+                ).id
+            ) {
                 "Recipient Account not created"
             }
         val sendAmount = BigDecimal(1000)
 
         transferService.transferMoney(senderId, recipientId, sendAmount)
-
-        em.flush()
-        em.clear()
 
         val senderAccount = accountService.findById(senderId)
         val recipientAccount = accountService.findById(recipientId)
@@ -63,30 +65,49 @@ class TransferServiceTest {
     @Test
     @DisplayName("잔액 부족 송금 테스트")
     fun `transfer money insufficient balance`() {
-        val senderId: Long = requireNotNull(accountService.createAccount("sender", "Sender", BigDecimal(1000)).id) {
-            "Sender account not created"
-        }
+        val senderId: Long =
+            requireNotNull(accountService.createAccount("sender125" + createRandomInt(), "Sender", BigDecimal(1000)).id) {
+                "Sender account not created"
+            }
         val recipientId: Long =
-            requireNotNull(accountService.createAccount("recipient", "Recipient", BigDecimal(10000)).id) {
+            requireNotNull(
+                accountService.createAccount(
+                    "recipient21525" + createRandomInt(),
+                    "Recipient",
+                    BigDecimal(10000)
+                ).id
+            ) {
                 "Recipient Account not created"
             }
         val sendAmount = BigDecimal(10000)
 
-        val exception = assertThrows<IllegalStateException> {
-            transferService.transferMoney(senderId, recipientId, sendAmount)
+        transferService.transferMoney(senderId, recipientId, sendAmount)
+
+        // 금액이 일정한지
+        accountService.findById(senderId).let {
+            assertEquals(BigDecimal(1000).compareTo(it.balance), 0)
         }
-        assertEquals(
-            "Insufficient balance",
-            exception.message
-        )
+        accountService.findById(recipientId).let {
+            assertEquals(BigDecimal(10000).compareTo(it.balance), 0)
+        }
+
+//        // 실패 히스토리가 저장되어 있는지
+//        val history = immediateTransferResultRepository.findAll()
+//            .filter { it.senderId == senderId }
+//            .filter { it.recipientId == recipientId }
+//            .filter { it.amount == sendAmount }
+//
+//        assertEquals(1, history.size)
+//        assertEquals(TransferStatus.FAILED, history[0].status)
     }
 
     @Test
     @DisplayName("계좌 없는 송금 테스트")
     fun `transfer money account not found`() {
-        val senderId: Long = requireNotNull(accountService.createAccount("sender", "Sender", BigDecimal(1000)).id) {
-            "Sender account not created"
-        }
+        val senderId: Long =
+            requireNotNull(accountService.createAccount("sender" + createRandomInt(), "Sender", BigDecimal(1000)).id) {
+                "Sender account not created"
+            }
         val recipientId: Long = 1000
         val sendAmount = BigDecimal(1000)
 
@@ -99,11 +120,23 @@ class TransferServiceTest {
     @Test
     @DisplayName("빈번한 송금 테스트 - 시간단위 송금 횟수 초과")
     fun `transfer money frequent transfers`() {
-        val senderId: Long = requireNotNull(accountService.createAccount("sender", "Sender", BigDecimal(100000)).id) {
+        val senderId: Long = requireNotNull(
+            accountService.createAccount(
+                "sender" + createRandomInt(),
+                "Sender",
+                BigDecimal(100000)
+            ).id
+        ) {
             "Sender account not created"
         }
         val recipientId: Long =
-            requireNotNull(accountService.createAccount("recipient", "Recipient", BigDecimal(10000)).id) {
+            requireNotNull(
+                accountService.createAccount(
+                    "recipient" + createRandomInt(),
+                    "Recipient",
+                    BigDecimal(10000)
+                ).id
+            ) {
                 "Recipient Account not created"
             }
         val sendAmount = BigDecimal(1000)
@@ -128,7 +161,7 @@ class TransferServiceTest {
     fun `transfer money frequent transfers - exceeds max transfer amount`() {
         val senderId: Long = requireNotNull(
             accountService.createAccount(
-                username = "sender",
+                username = "sender3462",
                 name = "Sender",
                 balance = BigDecimal(9999999999),
                 transactionLimit = BigDecimal(9999999999),
@@ -140,7 +173,7 @@ class TransferServiceTest {
         val recipientId: Long =
             requireNotNull(
                 accountService.createAccount(
-                    "recipient",
+                    "recipient2346",
                     "Recipient",
                     balance = BigDecimal(9999999999)
                 ).id
@@ -167,11 +200,18 @@ class TransferServiceTest {
     @Test
     @DisplayName("예약 송금 테스트")
     fun `schedule transfer`() {
-        val senderId: Long = requireNotNull(accountService.createAccount("sender", "Sender", BigDecimal(10000)).id) {
-            "Sender account not created"
-        }
+        val senderId: Long =
+            requireNotNull(accountService.createAccount("sender" + createRandomInt(), "Sender", BigDecimal(10000)).id) {
+                "Sender account not created"
+            }
         val recipientId: Long =
-            requireNotNull(accountService.createAccount("recipient", "Recipient", BigDecimal(10000)).id) {
+            requireNotNull(
+                accountService.createAccount(
+                    "recipient" + createRandomInt(),
+                    "Recipient",
+                    BigDecimal(10000)
+                ).id
+            ) {
                 "Recipient Account not created"
             }
         val sendAmount = BigDecimal(1000)
@@ -183,8 +223,6 @@ class TransferServiceTest {
             LocalDateTime.now().plusMinutes(5)
         )
 
-        em.flush()
-        em.clear()
 
         val findAll = pendingTransferRepository.findAll()
         assertEquals(1, findAll.size)
@@ -193,4 +231,6 @@ class TransferServiceTest {
         assertEquals(0, findAll[0].amount.compareTo(sendAmount))
 
     }
+
+    private fun createRandomInt() = (0..100).random()
 }

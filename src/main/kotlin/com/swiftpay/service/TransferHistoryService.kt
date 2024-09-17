@@ -36,4 +36,5 @@ class TransferHistoryService(
         immediateTransferResultRepository.save(immediateTransferResult)
         log.info("Transfer history for failed transfer from account $senderId to account $recipientId saved successfully")
     }
+
 }

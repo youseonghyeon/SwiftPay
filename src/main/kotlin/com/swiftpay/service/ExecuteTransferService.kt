@@ -13,7 +13,6 @@ import java.time.LocalDate
 class ExecuteTransferService(
     private val accountService: AccountService,
     private val transferValidator: TransferValidator,
-    private val accountRepository: AccountRepository
 ) {
 
     private val log: Logger = LoggerFactory.getLogger(ExecuteTransferService::class.java)
@@ -27,7 +26,6 @@ class ExecuteTransferService(
         // 송금 한도 및 계좌 상태 확인
         transferValidator.calculateDailyTransferAmount(senderAccount, LocalDate.now())
             .let { transferValidator.validateAccounts(senderAccount, recipientAccount, sendAmount, it) }
-
 
         senderAccount.balance = senderAccount.balance - sendAmount
         recipientAccount.balance = recipientAccount.balance + sendAmount

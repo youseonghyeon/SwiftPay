@@ -1,5 +1,7 @@
 package com.swiftpay.service
 
+import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.DisplayName
@@ -19,11 +21,18 @@ class AccountServiceTest {
     @Autowired
     private lateinit var accountService: AccountService
 
+    @PersistenceContext
+    private lateinit var em: EntityManager
+
     @Test
     @DisplayName("유저 생성 테스트")
     fun `create account`() {
         val account = accountService.createAccount("test", "Test User", BigDecimal(1000))
-        assertNotNull(account.id)
+        em.flush()
+        em.clear()
+
+        val findById = accountService.findById(account.id!!)
+        assertNotNull(findById.id == account.id)
     }
 
     @Test

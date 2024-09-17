@@ -1,18 +1,15 @@
 package com.swiftpay.service
 
-import com.swiftpay.repository.AccountRepository
-import com.swiftpay.testutil.MockAccount
-import jakarta.persistence.EntityManager
-import jakarta.persistence.PersistenceContext
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import kotlin.test.assertEquals
 
-@Transactional
+//@Transactional (commented out to avoid transactional issues)
 @SpringBootTest
 @ActiveProfiles("test")
 class ExecuteTransferServiceTest {
@@ -24,31 +21,71 @@ class ExecuteTransferServiceTest {
     private lateinit var accountService: AccountService
 
 
-    /**
-     * 1. 송금자 계정 잠겼는지
-     * 2. 송금액이 잔액보다 큰지
-     * 3. 송금액이 거래 한도를 초과하는지
-     * 4. 송금액이 일일 한도를 초과하는지
-     * 5. 받는사람 계정 잠김
-     */
-
-
     @Test
     @DisplayName("송금 실행 성공 테스트")
     fun `execute transfer success`() {
         val senderAccount = accountService.createAccount("sender", "sender", BigDecimal(10000))
         val recipientAccount = accountService.createAccount("receiver", "receiver", BigDecimal(10000))
 
-
         executeTransferService.executeTransfer(senderAccount.id!!, recipientAccount.id!!, BigDecimal(1000))
 
         accountService.findById(senderAccount.id!!).let {
-            assert(it.balance == BigDecimal(9000))
+            assertEquals(BigDecimal(9000).compareTo(it.balance), 0)
         }
         accountService.findById(recipientAccount.id!!).let {
-            assert(it.balance == BigDecimal(11000))
+            assertEquals(BigDecimal(11000).compareTo(it.balance), 0)
         }
     }
 
+    @Test
+    @DisplayName("송금 실행 실패 테스트 - 송금자 계정 잠김")
+    fun `execute transfer fail - sender account locked`() {
+        val senderAccount = accountService.createAccount("sender2", "sender", BigDecimal(10000), isAccountLocked = true)
+        val recipientAccount = accountService.createAccount("receiver1", "receiver", BigDecimal(10000))
+
+        val exception = assertThrows<IllegalStateException> {
+            executeTransferService.executeTransfer(senderAccount.id!!, recipientAccount.id!!, BigDecimal(1000))
+        }
+        assertEquals("Account is locked", exception.message)
+    }
+
+    @Test
+    @DisplayName("송금 실행 실패 테스트 - 송금 한도 초과")
+    fun `execute transfer fail - transfer limit exceeded`() {
+        val senderAccount =
+            accountService.createAccount("sender642356", "sender", BigDecimal(100000), transactionLimit = BigDecimal(8000))
+        val recipientAccount = accountService.createAccount("receiver21253", "receiver", BigDecimal(100000))
+
+        val exception = assertThrows<IllegalStateException> {
+            executeTransferService.executeTransfer(senderAccount.id!!, recipientAccount.id!!, BigDecimal(8100))
+        }
+        assertEquals("Transfer amount exceeds the transaction limit", exception.message)
+    }
+
+    @Test
+    @DisplayName("송금 실행 실패 테스트 - 일일 한도 초과")
+    fun `execute transfer fail - daily limit exceeded`() {
+        val senderAccount =
+            accountService.createAccount("sender32315", "sender", BigDecimal(100000), dailyLimit = BigDecimal(8000))
+        val recipientAccount = accountService.createAccount("receiver3", "receiver", BigDecimal(100000))
+
+        val exception = assertThrows<IllegalStateException> {
+            executeTransferService.executeTransfer(senderAccount.id!!, recipientAccount.id!!, BigDecimal(8100))
+        }
+        assertEquals("Transfer amount exceeds the daily limit", exception.message)
+    }
+
+    @Test
+    @DisplayName("송금 실행 실패 테스트 - 수신자 계정 잠김")
+    fun `execute transfer fail - recipient account locked`() {
+        val senderAccount = accountService.createAccount("sender4347", "sender", BigDecimal(10000))
+        val recipientAccount =
+            accountService.createAccount("receiver3474", "receiver", BigDecimal(10000), isAccountLocked = true)
+
+        val exception = assertThrows<IllegalStateException> {
+            executeTransferService.executeTransfer(senderAccount.id!!, recipientAccount.id!!, BigDecimal(1000))
+        }
+        assertEquals("Account(receiver) is locked", exception.message)
+    }
 
 }
