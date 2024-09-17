@@ -12,7 +12,7 @@ import kotlin.test.assertEquals
 //@Transactional (commented out to avoid transactional issues)
 @SpringBootTest
 @ActiveProfiles("test")
-class ExecuteTransferServiceTest {
+class ExecuteImmediateTransferServiceTest {
 
     @Autowired
     private lateinit var executeTransferService: ExecuteTransferService

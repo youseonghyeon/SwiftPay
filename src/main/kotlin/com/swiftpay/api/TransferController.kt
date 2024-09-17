@@ -4,7 +4,7 @@ import com.swiftpay.dto.ApiResponse
 import com.swiftpay.dto.ScheduleTransferRequest
 import com.swiftpay.dto.TransferRequest
 import com.swiftpay.service.ScheduledTransferService
-import com.swiftpay.service.TransferService
+import com.swiftpay.service.ImmediateTransferService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/transfers")
 class TransferController(
-    private val transferService: TransferService,
+    private val immediateTransferService: ImmediateTransferService,
     private val scheduledTransferService: ScheduledTransferService
 ) {
 
@@ -26,7 +26,7 @@ class TransferController(
     @PostMapping("/transfer")
     fun realTimeTransfer(@RequestBody request: TransferRequest): ResponseEntity<ApiResponse<Unit>> {
         log.info("Processing real-time transfer request: $request")
-        transferService.transferMoney(request.senderId, request.recipientId, request.amount)
+        immediateTransferService.immediateTransferProcess(request.senderId, request.recipientId, request.amount)
 
         val apiResponse = ApiResponse<Unit>(
             status = HttpStatus.OK.value(),

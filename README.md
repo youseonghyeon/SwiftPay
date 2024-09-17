@@ -315,7 +315,11 @@ CPU 사용량은 100%를 유지하였습니다.
 # 8. 예약 송금 기능 추가 및 DB 마이그레이션
 **2024년 9월 17일**
 
-
+## 추가된 기능
+- **예약 송금 기능**: 사용자가 원하는 시간에 송금을 예약할 수 있는 기능을 추가하였습니다.
+  - 데이터를 등록 후 예약 시간이 되면 자동으로 송금이 이루어지도록 개발하였습니다.
+- **DB 마이그레이션**: 예약 송금을 위한 테이블을 추가하고, 기존 테이블과의 관계를 설정하였습니다.
+  - 마이그레이션은 kafka connect 와 sql 중 데이터 양을 고려하여 sql으로 진행하였습니다.
 ```mysql
 insert into immediate_transfer_result (created_at, updated_at, amount, description, recipient_id, sender_id, status, transfer_time)
     select h.created_at, h.updated_at, h.amount, h.description, h.recipient_id, h.sender_id, h.status, h.transfer_date

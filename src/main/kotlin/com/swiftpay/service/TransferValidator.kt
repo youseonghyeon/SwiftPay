@@ -10,6 +10,11 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 
+/**
+ * Validates transfer requests before execution.
+ * This service checks account statuses, transfer limits, and any abnormal transfer attempts.
+ * It also blocks accounts when necessary based on abnormal activities or exceeded transfer limits.
+ */
 @Component
 class TransferValidator(
     private val accountService: AccountService,
@@ -28,6 +33,13 @@ class TransferValidator(
     private val log = LoggerFactory.getLogger(TransferValidator::class.java)
     private val ttlMap = TtlMap(ttlTime, ttlUnit)
 
+    /**
+     * Checks for abnormal requests from the sender's account. If the number of requests exceeds
+     * the defined block attempt count, the sender's account will be blocked and an exception will be thrown.
+     *
+     * @param senderAccount the account of the sender making the request.
+     * @throws IllegalStateException if the account is blocked due to abnormal activity.
+     */
     fun checkForAbnormalRequests(senderAccount: Account) {
         RequestTracker.logRequest(senderAccount.id!!)
         RequestTracker.clearOldRequests(senderAccount.id)
@@ -39,6 +51,15 @@ class TransferValidator(
         }
     }
 
+    /**
+     * Validates the frequency and amount of transfers made from a sender's account.
+     * If the total amount transferred in a predefined period exceeds the maximum allowed,
+     * the account will be blocked and an exception will be thrown.
+     *
+     * @param senderAccount the account of the sender making the request
+     * @param sendAmount the amount of money to be transferred
+     * @throws IllegalStateException if the account is blocked due to exceeding the allowed transfer amount
+     */
     fun validateFrequentTransfers(senderAccount: Account, sendAmount: BigDecimal) {
         val sendAmountInPeriod = ttlMap.get(senderAccount.id!!)
         if (sendAmountInPeriod + sendAmount > maxPeriodAmount) {
@@ -49,6 +70,13 @@ class TransferValidator(
         ttlMap.add(senderAccount.id, sendAmount)
     }
 
+    /**
+     * Calculates the total transfer amount of the sender's account for a given day.
+     *
+     * @param senderAccount the account of the sender making the transfer
+     * @param date the specific date for which the daily transfer amount is to be calculated
+     * @return the total transfer amount for the given date, or BigDecimal.ZERO if no transfers occurred
+     */
     fun calculateDailyTransferAmount(senderAccount: Account, date: LocalDate): BigDecimal {
         log.info("Calculating daily transfer amount for account ID ${senderAccount.id} on ${date}")
         return immediateTransferResultRepository.findSumAmountBySenderIdAndTransferDateBetween(
@@ -58,6 +86,22 @@ class TransferValidator(
         ) ?: BigDecimal.ZERO
     }
 
+    /**
+     * Validates the sender and recipient accounts for a transfer.
+     * Ensures that the sender has sufficient balance, the sender's account is not locked,
+     * the transfer amount is within the transaction limit, and the daily limit has not been exceeded.
+     * It also checks that the recipient's account is not locked.
+     *
+     * @param senderAccount the account of the sender making the transfer
+     * @param recipientAccount the account of the recipient receiving the transfer
+     * @param sendAmount the amount of money to be transferred
+     * @param dailyTransferAmount the total amount of money transferred in the current day, excluding the current transfer amount
+     * @throws IllegalStateException if the sender's account is locked
+     * @throws IllegalStateException if the sender's balance is insufficient
+     * @throws IllegalStateException if the transfer amount exceeds the transaction limit
+     * @throws IllegalStateException if the sum of the daily transfer amount and the current transfer amount exceeds the daily limit
+     * @throws IllegalStateException if the recipient's account is locked
+     */
     fun validateAccounts(
         senderAccount: Account,
         recipientAccount: Account,

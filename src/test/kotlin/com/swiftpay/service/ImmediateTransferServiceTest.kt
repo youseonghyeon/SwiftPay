@@ -1,6 +1,5 @@
 package com.swiftpay.service
 
-import com.swiftpay.entity.TransferStatus
 import com.swiftpay.repository.ImmediateTransferResultRepository
 import com.swiftpay.repository.PendingTransferRepository
 import org.junit.jupiter.api.DisplayName
@@ -16,13 +15,13 @@ import kotlin.test.assertTrue
 
 @SpringBootTest
 @ActiveProfiles("test")
-class TransferServiceTest {
+class ImmediateTransferServiceTest {
 
     @Autowired
     private lateinit var accountService: AccountService
 
     @Autowired
-    private lateinit var transferService: TransferService
+    private lateinit var immediateTransferService: ImmediateTransferService
 
     @Autowired
     private lateinit var pendingTransferRepository: PendingTransferRepository
@@ -53,7 +52,7 @@ class TransferServiceTest {
             }
         val sendAmount = BigDecimal(1000)
 
-        transferService.transferMoney(senderId, recipientId, sendAmount)
+        immediateTransferService.immediateTransferProcess(senderId, recipientId, sendAmount)
 
         val senderAccount = accountService.findById(senderId)
         val recipientAccount = accountService.findById(recipientId)
@@ -81,7 +80,7 @@ class TransferServiceTest {
             }
         val sendAmount = BigDecimal(10000)
 
-        transferService.transferMoney(senderId, recipientId, sendAmount)
+        immediateTransferService.immediateTransferProcess(senderId, recipientId, sendAmount)
 
         // 금액이 일정한지
         accountService.findById(senderId).let {
@@ -112,7 +111,7 @@ class TransferServiceTest {
         val sendAmount = BigDecimal(1000)
 
         val exception = assertThrows<IllegalArgumentException> {
-            transferService.transferMoney(senderId, recipientId, sendAmount)
+            immediateTransferService.immediateTransferProcess(senderId, recipientId, sendAmount)
         }
         assertEquals("Account not found", exception.message)
     }
@@ -142,11 +141,11 @@ class TransferServiceTest {
         val sendAmount = BigDecimal(1000)
 
         repeat(10) {
-            transferService.transferMoney(senderId, recipientId, sendAmount)
+            immediateTransferService.immediateTransferProcess(senderId, recipientId, sendAmount)
         }
 
         val exception = assertThrows<IllegalStateException> {
-            transferService.transferMoney(senderId, recipientId, sendAmount)
+            immediateTransferService.immediateTransferProcess(senderId, recipientId, sendAmount)
         }
         assertEquals(
             "Account $senderId has been blocked due to abnormal activity. (Max request count exceeded)",
@@ -183,11 +182,11 @@ class TransferServiceTest {
         val sendAmount = BigDecimal(20000)
 
         repeat(5) {
-            transferService.transferMoney(senderId, recipientId, sendAmount)
+            immediateTransferService.immediateTransferProcess(senderId, recipientId, sendAmount)
         }
 
         val exception = assertThrows<IllegalStateException> {
-            transferService.transferMoney(senderId, recipientId, sendAmount)
+            immediateTransferService.immediateTransferProcess(senderId, recipientId, sendAmount)
         }
         assertEquals(
             "Account $senderId has been blocked due to abnormal activity. (Max transfer amount exceeded)",

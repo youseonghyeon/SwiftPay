@@ -3,7 +3,7 @@ package com.swiftpay.api
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.swiftpay.dto.TransferRequest
 import com.swiftpay.service.ScheduledTransferService
-import com.swiftpay.service.TransferService
+import com.swiftpay.service.ImmediateTransferService
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.springframework.beans.factory.annotation.Autowired
@@ -22,7 +22,7 @@ class TransferControllerTest {
     private lateinit var mockMvc: MockMvc
 
     @MockBean
-    private lateinit var transferService: TransferService
+    private lateinit var immediateTransferService: ImmediateTransferService
 
     @MockBean
     private lateinit var scheduledTransferService: ScheduledTransferService
@@ -38,7 +38,7 @@ class TransferControllerTest {
             amount = BigDecimal(1000)
         )
 
-        Mockito.doNothing().`when`(transferService).transferMoney(request.senderId, request.recipientId, request.amount)
+        Mockito.doNothing().`when`(immediateTransferService).immediateTransferProcess(request.senderId, request.recipientId, request.amount)
 
         mockMvc.perform(
             post("/api/transfers/transfer")

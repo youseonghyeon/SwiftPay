@@ -1,6 +1,5 @@
 package com.swiftpay.service
 
-import com.swiftpay.repository.AccountRepository
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -9,6 +8,11 @@ import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDate
 
+/**
+ * Handles the actual transfer process between accounts.
+ * This service is responsible for executing the transfer of funds
+ * from the sender's account to the recipient's account.
+ */
 @Service
 class ExecuteTransferService(
     private val accountService: AccountService,
@@ -17,8 +21,21 @@ class ExecuteTransferService(
 
     private val log: Logger = LoggerFactory.getLogger(ExecuteTransferService::class.java)
 
+    /**
+     * Executes a money transfer between two accounts.
+     * Validates account status and transfer limits before adjusting balances.
+     *
+     * @param senderAccountId the ID of the sender's account
+     * @param recipientAccountId the ID of the recipient's account
+     * @param sendAmount the amount of money to transfer
+     * @throws IllegalStateException if the sender's account is locked
+     * @throws IllegalStateException if the sender's balance is insufficient
+     * @throws IllegalStateException if the transfer amount exceeds the transaction limit
+     * @throws IllegalStateException if the transfer amount exceeds the daily limit
+     * @throws IllegalStateException if the recipient's account is locked
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    fun executeTransfer(senderAccountId: Long, recipientAccountId: Long, sendAmount: BigDecimal) {
+    internal fun executeTransfer(senderAccountId: Long, recipientAccountId: Long, sendAmount: BigDecimal) {
 
         val senderAccount = accountService.findById(senderAccountId)
         val recipientAccount = accountService.findById(recipientAccountId)
