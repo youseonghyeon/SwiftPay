@@ -28,6 +28,9 @@ class TransferServiceTest {
 
     @Autowired
     private lateinit var pendingTransferRepository: PendingTransferRepository
+    
+    @Autowired
+    private lateinit var scheduledTransferService: ScheduledTransferService
 
 
     @PersistenceContext
@@ -173,7 +176,7 @@ class TransferServiceTest {
             }
         val sendAmount = BigDecimal(1000)
 
-        transferService.scheduleTransfer(
+        scheduledTransferService.scheduleTransferEnroll(
             senderId,
             recipientId,
             sendAmount.toDouble(),

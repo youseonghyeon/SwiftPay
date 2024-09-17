@@ -49,12 +49,12 @@ class TransferValidator(
         ttlMap.add(senderAccount.id, sendAmount)
     }
 
-    fun calculateDailyTransferAmount(senderAccount: Account): BigDecimal {
-        log.info("transferHistoryRepository $immediateTransferResultRepository")
+    fun calculateDailyTransferAmount(senderAccount: Account, date: LocalDate): BigDecimal {
+        log.info("Calculating daily transfer amount for account ID ${senderAccount.id} on ${date}")
         return immediateTransferResultRepository.findSumAmountBySenderIdAndTransferDateBetween(
             senderAccount.id!!,
-            LocalDate.now().atStartOfDay(),
-            LocalDate.now().atTime(23, 59, 59)
+            date.atStartOfDay(),
+            date.atTime(23, 59, 59)
         ) ?: BigDecimal.ZERO
     }
 

@@ -23,8 +23,8 @@ class PendingTransfer(
     @Column(name = "amount", nullable = false, precision = 15, scale = 2)
     var amount: BigDecimal,
 
-    @Column(name = "transfer_time", nullable = false)
-    var schedule_time: LocalDateTime,
+    @Column(name = "schedule_time", nullable = false)
+    var scheduleTime: LocalDateTime,
 
     @Column(name = "status", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)

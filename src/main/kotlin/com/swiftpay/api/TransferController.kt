@@ -3,6 +3,7 @@ package com.swiftpay.api
 import com.swiftpay.dto.ApiResponse
 import com.swiftpay.dto.ScheduleTransferRequest
 import com.swiftpay.dto.TransferRequest
+import com.swiftpay.service.ScheduledTransferService
 import com.swiftpay.service.TransferService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/transfers")
-class TransferController(private val transferService: TransferService) {
+class TransferController(private val transferService: TransferService, private val scheduledTransferService: ScheduledTransferService) {
 
     private val log: Logger = LoggerFactory.getLogger(javaClass)
 
@@ -33,9 +34,16 @@ class TransferController(private val transferService: TransferService) {
     }
 
     @PostMapping("/schedule-transfer")
-    fun scheduleTransfer(@RequestBody request: ScheduleTransferRequest) {
+    fun scheduleTransfer(@RequestBody request: ScheduleTransferRequest): ResponseEntity<ApiResponse<Unit>> {
         log.info("Processing scheduled transfer request: $request")
-        transferService.scheduleTransfer(request.senderId, request.recipientId, request.amount, request.scheduleTime)
+        scheduledTransferService.scheduleTransferEnroll(request.senderId, request.recipientId, request.amount, request.scheduleTime)
+
+        val apiResponse = ApiResponse<Unit>(
+            status = HttpStatus.OK.value(),
+            message = "Scheduled transfer enroll completed successfully"
+        )
+
+        return ResponseEntity.status(HttpStatus.OK).body(apiResponse)
     }
 
 }

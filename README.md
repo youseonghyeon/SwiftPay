@@ -310,3 +310,14 @@ CPU 사용량은 100%를 유지하였습니다.
 <img width="1531" alt="스크린샷 2024-09-08 오후 9 30 35" src="https://github.com/user-attachments/assets/4f3b30c3-99bf-4929-8834-761889f6ae89">
 
 ---
+
+
+# 8. 예약 송금 기능 추가 및 DB 마이그레이션
+**2024년 9월 17일**
+
+
+```mysql
+insert into immediate_transfer_result (created_at, updated_at, amount, description, recipient_id, sender_id, status, transfer_time)
+    select h.created_at, h.updated_at, h.amount, h.description, h.recipient_id, h.sender_id, h.status, h.transfer_date
+from transfer_history h;
+```
