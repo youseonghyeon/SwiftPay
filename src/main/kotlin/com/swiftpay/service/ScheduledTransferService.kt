@@ -94,7 +94,7 @@ class ScheduledTransferService(
     @Transactional
     fun scheduledTransferProcess(pendingTransferId: Long) {
         val pendingTransfer = pendingTransferRepository.findById(pendingTransferId).get()
-        log.info("Starting scheduled transfer processing")
+        log.info("Starting scheduled transfer processing for transfer ID: $pendingTransferId")
         val senderAccount = accountService.findById(pendingTransfer.senderId)
         val recipientAccount = accountService.findById(pendingTransfer.recipientId)
         val sendAmount = pendingTransfer.amount
@@ -108,9 +108,9 @@ class ScheduledTransferService(
             // 송금 결과 테이블 업데이트
             scheduledTransferResultRepository.findByTransactionId(transactionId)!!
                 .let { it.status = TransferStatus.SUCCESS }
-
+            log.info("Scheduled transfer completed successfully for transfer ID: $pendingTransferId")
         } catch (e: RuntimeException) {
-            log.error("Scheduled transfer failed", e)
+            log.error("Scheduled transfer failed transferId:  $pendingTransferId", e)
             val transactionId: String = pendingTransfer.transactionId
             // 송금 테이블 실패 업데이트
             pendingTransfer.status = TransferStatus.FAILED

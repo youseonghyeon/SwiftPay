@@ -1,5 +1,7 @@
 package com.swiftpay.service
 
+import io.micrometer.core.instrument.MeterRegistry
+import jakarta.annotation.PostConstruct
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -17,9 +19,15 @@ import java.time.LocalDate
 class ExecuteTransferService(
     private val accountService: AccountService,
     private val transferValidator: TransferValidator,
+    private val meterRegistry: MeterRegistry
 ) {
 
     private val log: Logger = LoggerFactory.getLogger(ExecuteTransferService::class.java)
+
+    @PostConstruct
+    fun metricInit() {
+        meterRegistry.counter("swiftpay_transfer_request_total", "status", "success")
+    }
 
     /**
      * Executes a money transfer between two accounts.
@@ -47,7 +55,17 @@ class ExecuteTransferService(
         senderAccount.balance = senderAccount.balance - sendAmount
         recipientAccount.balance = recipientAccount.balance + sendAmount
 
+        incrementMetricForTest()
+
         log.info("Transfer of amount $sendAmount from account ${senderAccount.id} to account ${recipientAccount.id} executed successfully")
+    }
+
+    private fun incrementMetricForTest() {
+        try {
+            meterRegistry.counter("swiftpay_transfer_request_total", "status", "success").increment()
+        } catch (e: Exception) {
+            log.error("Error incrementing metric: ${e.message}")
+        }
     }
 }
 

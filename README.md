@@ -325,3 +325,12 @@ insert into immediate_transfer_result (created_at, updated_at, amount, descripti
     select h.created_at, h.updated_at, h.amount, h.description, h.recipient_id, h.sender_id, h.status, h.transfer_date
 from transfer_history h;
 ```
+
+---
+
+# 9. Service 소스코드 리팩토링
+**2024년 9월 17일**
+
+## 리팩토링 내용
+- **Service 분리**: 송금 서비스와 예약 송금 서비스 그리고 실제 송금만을 담당하는 서비스로 분리하였습니다.
+- **java doc 추가**: 메서드에 대한 상세 설명을 추가하였습니다.
